@@ -3,6 +3,7 @@ package com.gamecodeschool.snake.mechanics;
 import android.util.Log;
 import android.view.MotionEvent;
 import com.gamecodeschool.snake.buttons.dpad;
+import com.gamecodeschool.snake.interfaces.DirectionalControl;
 
 public class dpadTouchHandler extends TouchHandler {
     private com.gamecodeschool.snake.buttons.dpad dpad;

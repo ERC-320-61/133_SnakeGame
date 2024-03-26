@@ -1,4 +1,4 @@
-package com.gamecodeschool.snake.mechanics;
+package com.gamecodeschool.snake.interfaces;
 
 public interface DirectionalControl {
     void onUpPressed();

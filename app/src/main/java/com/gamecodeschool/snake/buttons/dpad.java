@@ -11,7 +11,7 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 
 import com.gamecodeschool.snake.R;
-import com.gamecodeschool.snake.mechanics.DirectionalControl;
+import com.gamecodeschool.snake.interfaces.DirectionalControl;
 
 public class dpad {
 
