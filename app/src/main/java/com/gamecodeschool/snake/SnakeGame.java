@@ -13,12 +13,26 @@ import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import com.gamecodeschool.snake.buttons.PauseButton;
+import com.gamecodeschool.snake.buttons.dpad;
+import com.gamecodeschool.snake.mechanics.PauseButtonTouchHandler;
+import com.gamecodeschool.snake.mechanics.TouchHandler;
+import com.gamecodeschool.snake.mechanics.dpadTouchHandler;
+import com.gamecodeschool.snake.mechanics.DebugTouchDrawer;
+import com.gamecodeschool.snake.mechanics.GameStateChangeListener;
+
 import java.io.IOException;
 
-class SnakeGame extends SurfaceView implements Runnable{
+class SnakeGame extends SurfaceView implements Runnable, GameStateChangeListener{
+    //Debugging
+    private DebugTouchDrawer debugTouchDrawer;
+
+
     // Objects for the game loop/thread
     private Thread mThread = null;
     // Control pausing between updates
@@ -44,10 +58,18 @@ class SnakeGame extends SurfaceView implements Runnable{
     // And an apple
     private Apple mApple;
 
+    //Touch handling variables
+    private TouchHandler dpadTouchHandler;
+    private TouchHandler pauseButtonTouchHandler;
+
     // Pause Button properties
     private Rect mPauseButton;
     private boolean mIsGamePaused = false; // Track pause state
     private int mButtonSize; // Size of the pause button
+
+    // In the SnakeGame class
+    private com.gamecodeschool.snake.buttons.dpad dpad;
+
 
 
     // This is the constructor method that gets called
@@ -55,16 +77,42 @@ class SnakeGame extends SurfaceView implements Runnable{
     public SnakeGame(Context context, Point size) {
         super(context);
 
-        // Initialize the Pause Button
-        int buttonPadding = 20; //can adjust
-        mButtonSize = size.x / 14; // size
+        // Calculate the number of blocks high based on the screen size
+        int blockSize = size.x / NUM_BLOCKS_WIDE;
+        mNumBlocksHigh = size.y / blockSize;
+
+        // Initialize the Pause Button size and position first
+        int buttonPadding = 20; // Can adjust
+        mButtonSize = size.x / 14; // Size
         mPauseButton = new Rect(buttonPadding, size.y - buttonPadding - mButtonSize, buttonPadding + mButtonSize, size.y - buttonPadding);
 
+        // Now that we have correct game dimensions, initialize game objects
+        mSnake = new Snake(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
+        mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), blockSize);
 
-        // Work out how many pixels each block is
-        int blockSize = size.x / NUM_BLOCKS_WIDE;
-        // How many blocks of the same size will fit into the height
-        mNumBlocksHigh = size.y / blockSize;
+        // Initialize the DPad
+        dpad = new dpad(context, size);
+
+        // Initialize touch handlers
+        dpadTouchHandler = new dpadTouchHandler(dpad, mSnake);
+        Rect pauseButtonRect = new Rect(buttonPadding, size.y - buttonPadding - mButtonSize, buttonPadding + mButtonSize, size.y - buttonPadding);
+        PauseButton pauseButton = new PauseButton(pauseButtonRect, new Runnable() {
+            @Override
+            public void run() {
+                // Toggle game pause state
+                mIsGamePaused = !mIsGamePaused;
+                mPaused = mIsGamePaused;
+            }
+        });
+
+        // In your SnakeGame class setup or constructor
+        pauseButtonTouchHandler = new PauseButtonTouchHandler(pauseButtonRect, this);
+        ;
+
+        // Initialize the drawing objects
+        mSurfaceHolder = getHolder();
+        mPaint = new Paint();
+
         // Initialize the SoundPool
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
@@ -79,6 +127,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         } else {
             mSP = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
         }
+
         try {
             AssetManager assetManager = context.getAssets();
             AssetFileDescriptor descriptor;
@@ -89,25 +138,35 @@ class SnakeGame extends SurfaceView implements Runnable{
 
             descriptor = assetManager.openFd("snake_death.ogg");
             mCrashID = mSP.load(descriptor, 0);
-
         } catch (IOException e) {
-            // Error
+            // Handle error
         }
-        // Initialize the drawing objects
-        mSurfaceHolder = getHolder();
-        mPaint = new Paint();
-        // Call the constructors of our two game objects
-        mApple = new Apple(context,
-                new Point(NUM_BLOCKS_WIDE,
-                        mNumBlocksHigh),
-                blockSize);
 
-        mSnake = new Snake(context,
-                new Point(NUM_BLOCKS_WIDE,
-                        mNumBlocksHigh),
-                blockSize);
+        // Call the constructors of our game objects
+        mApple = new Apple(context, new Point(NUM_BLOCKS_WIDE, mNumBlocksHigh), size.x / NUM_BLOCKS_WIDE);
 
+        // Debugging
+        debugTouchDrawer = new DebugTouchDrawer();
+
+        // Start a new game
+        newGame();
     }
+
+    @Override
+    public void onGamePaused() {
+        mIsGamePaused = true;
+        // Handle additional logic when the game is paused, if necessary
+        Log.d("GameState", "Game Paused");
+    }
+
+    @Override
+    public void onGameResumed() {
+        mIsGamePaused = false;
+        // Handle additional logic when the game is resumed, if necessary
+        Log.d("GameState", "Game Resumed");
+    }
+
+
     // Called to start a new game
     public void newGame() {
         // reset the snake
@@ -126,16 +185,15 @@ class SnakeGame extends SurfaceView implements Runnable{
     @Override
     public void run() {
         while (mPlaying) {
-            if(!mPaused) {
-                // Update 10 times a second
+            if (!mPaused) {
                 if (updateRequired()) {
                     update();
                 }
             }
-
-            draw();
+            draw(); // You might want to draw regardless of paused state, to update the pause visual feedback
         }
     }
+
     // Check to see if it is time for an update
     public boolean updateRequired() {
         // Run at 10 frames per second
@@ -206,6 +264,9 @@ class SnakeGame extends SurfaceView implements Runnable{
             mPaint.setColor(Color.argb(255, 255, 255, 255)); // White color
             mCanvas.drawRect(mPauseButton, mPaint);
 
+            //Draw teh dpad
+            dpad.draw(mCanvas, mPaint);
+
 
             // Draw some text while paused
             // Draw "Tap to Play" or "Paused" message
@@ -219,35 +280,30 @@ class SnakeGame extends SurfaceView implements Runnable{
             // Unlock the mCanvas and reveal the graphics for this frame
             mSurfaceHolder.unlockCanvasAndPost(mCanvas);
         }
+        // Draw debug touch points
+        debugTouchDrawer.draw(mCanvas);
     }
+
     @Override
-    public boolean onTouchEvent(MotionEvent motionEvent) {
+    public boolean onTouchEvent(MotionEvent event) {
+        int x = (int) event.getX();
+        int y = (int) event.getY();
 
-        int x = (int) motionEvent.getX();
-        int y = (int) motionEvent.getY();
+        // Always log and set touch point for debugging
+        Log.d("Touch", "Touch at: (" + x + ", " + y + ")");
+        debugTouchDrawer.setTouchPoint(x, y);
 
-        switch (motionEvent.getAction() & MotionEvent.ACTION_MASK) {
-            case MotionEvent.ACTION_DOWN:
-                if (mPauseButton.contains(x, y) && mPlaying) {
-                    mIsGamePaused = !mIsGamePaused; // Toggle pause state
-                    mPaused = mIsGamePaused; // Update the game's pause state
-                    return true; // Event handled
-                } else if (mPaused) {
-                    // "Tap to Play" logic
-                    mIsGamePaused = false;
-                    mPaused = false;
-                    mPlaying = true;
-                    newGame();
-                    resume(); // Start the game loop
-                    return true; // Event handled
-                }
-                break;
+        // Attempt to handle the event with the pause button and DPad handlers
+        if (pauseButtonTouchHandler.handleTouchEvent(event) || dpadTouchHandler.handleTouchEvent(event)) {
+            return true; // Event was handled by one of the touch handlers
         }
-        if (!mPaused && mPlaying) {
-            mSnake.switchHeading(motionEvent);
-        }
-        return true;
+
+        // If not handled by specific touch handlers, pass it to the superclass
+        return super.onTouchEvent(event);
     }
+
+
+
 
     // Stop the thread
     public void pause() {

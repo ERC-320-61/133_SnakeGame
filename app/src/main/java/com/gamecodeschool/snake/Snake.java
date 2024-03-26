@@ -8,10 +8,10 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.view.MotionEvent;
-
+import com.gamecodeschool.snake.mechanics.DirectionalControl;
 import java.util.ArrayList;
 
-class Snake {
+class Snake implements DirectionalControl {
     // The location in the grid of all the segments
     private ArrayList<Point> segmentLocations;
     // How big is each segment of the snake?
@@ -104,6 +104,12 @@ class Snake {
 
 
     void move() {
+        // Check if there are segments to move
+        if (segmentLocations.isEmpty()) {
+            // Exit the method early if there are no segments
+            return;
+        }
+
         // Move the body
         // Start at the back and move it
         // to the position of the segment in front of it
@@ -113,8 +119,9 @@ class Snake {
             segmentLocations.get(i).x = segmentLocations.get(i - 1).x;
             segmentLocations.get(i).y = segmentLocations.get(i - 1).y;
         }
+
         // Move the head in the appropriate heading
-        // Get the existing head position
+        // Assuming the first segment is always the head
         Point p = segmentLocations.get(0);
         // Move it appropriately
         switch (heading) {
@@ -134,22 +141,45 @@ class Snake {
                 p.x--;
                 break;
         }
-
     }
+
+
+    @Override
+    public void onUpPressed() {
+        // Change snake direction to up
+    }
+
+    @Override
+    public void onDownPressed() {
+        // Change snake direction to down
+    }
+
+    @Override
+    public void onLeftPressed() {
+        // Change snake direction to left
+    }
+
+    @Override
+    public void onRightPressed() {
+        // Change snake direction to right
+    }
+
     boolean detectDeath() {
-        // Has the snake died?
+        // Check if the snake exists before checking for death
+        if (segmentLocations.isEmpty()) {
+            return false; // The snake can't die if it doesn't exist
+        }
+
+        // Existing detectDeath logic
         boolean dead = false;
-        // Hit any of the screen edges
-        if (segmentLocations.get(0).x == -1 ||
-                segmentLocations.get(0).x > mMoveRange.x ||
-                segmentLocations.get(0).y == -1 ||
-                segmentLocations.get(0).y > mMoveRange.y) {
+        // Check screen edges
+        if (segmentLocations.get(0).x == -1 || segmentLocations.get(0).x > mMoveRange.x ||
+                segmentLocations.get(0).y == -1 || segmentLocations.get(0).y > mMoveRange.y) {
             dead = true;
         }
 
-        // Eaten itself?
+        // Check self-collision
         for (int i = segmentLocations.size() - 1; i > 0; i--) {
-            // Have any of the sections collided with the head
             if (segmentLocations.get(0).x == segmentLocations.get(i).x &&
                     segmentLocations.get(0).y == segmentLocations.get(i).y) {
                 dead = true;
@@ -157,20 +187,23 @@ class Snake {
         }
         return dead;
     }
+
     boolean checkDinner(Point l) {
-        //if (snakeXs[0] == l.x && snakeYs[0] == l.y) {
-        if (segmentLocations.get(0).x == l.x &&
-                segmentLocations.get(0).y == l.y) {
-            // Add a new Point to the list
-            // located off-screen.
-            // This is OK because on the next call to
-            // move it will take the position of
-            // the segment in front of it
+        // Check if there are segments before accessing them
+        if (segmentLocations.isEmpty()) {
+            // Exit early if no segments
+            return false;
+        }
+
+        // Original checkDinner logic
+        if (segmentLocations.get(0).x == l.x && segmentLocations.get(0).y == l.y) {
+            // Add a new Point to the list located off-screen
             segmentLocations.add(new Point(-10, -10));
             return true;
         }
         return false;
     }
+
     void draw(Canvas canvas, Paint paint) {
         // Don't run this code if ArrayList has nothing in it
         if (!segmentLocations.isEmpty()) {
