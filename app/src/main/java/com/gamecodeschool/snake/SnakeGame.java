@@ -52,6 +52,11 @@ class SnakeGame extends SurfaceView implements Runnable{
     private long lastTurnTime = System.currentTimeMillis();
     private static final long TURN_DELAY = 100; // 100 milliseconds
 
+    // Speed control
+    private double speedFactor = 0.75; // Adjust this to control speed
+    private double accumulatedTime = 0;
+
+
 
     // This is the constructor method that gets called
     // from SnakeActivity
@@ -128,14 +133,21 @@ class SnakeGame extends SurfaceView implements Runnable{
     // Handles the game loop
     @Override
     public void run() {
+        long lastUpdateTime = System.currentTimeMillis();
         while (mPlaying) {
-            if(!mPaused) {
-                // Update 10 times a second
-                if (updateRequired()) {
-                    update();
-                }
-            }
+            if (!mPaused) {
+                long currentTime = System.currentTimeMillis();
+                long elapsedTime = currentTime - lastUpdateTime;
+                accumulatedTime += elapsedTime * speedFactor;
 
+                // Assuming updateRequired() checks for a fixed frame rate, let's repurpose it
+                if (updateRequired() && accumulatedTime >= (1000 / 10)) { // 10 FPS equivalent check
+                    update();
+                    accumulatedTime = 0; // Reset accumulated time after an update
+                }
+
+                lastUpdateTime = currentTime;
+            }
             draw();
         }
     }
@@ -230,6 +242,8 @@ class SnakeGame extends SurfaceView implements Runnable{
         int y = (int) motionEvent.getY();
 
         long currentTime = System.currentTimeMillis();
+        // Increase the delay between touches. For example, let's change it from 100ms to 200ms.
+        final long TURN_DELAY = 200; // 200 milliseconds between turns
         if (currentTime - lastTurnTime < TURN_DELAY) {
             return true; // Ignore this touch event, it's too soon after the last turn
         }
@@ -257,6 +271,7 @@ class SnakeGame extends SurfaceView implements Runnable{
         lastTurnTime = currentTime; // Update the last turn time
         return true;
     }
+
 
     // Stop the thread
     public void pause() {
