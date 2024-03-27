@@ -230,13 +230,13 @@ class Snake {
                     heading = Heading.RIGHT;
                     break;
                 case RIGHT:
-                    heading = Heading.DOWN;
+                    heading = Heading.RIGHT;
                     break;
                 case DOWN:
-                    heading = Heading.LEFT;
+                    heading = Heading.DOWN;
                     break;
                 case LEFT:
-                    heading = Heading.UP;
+                    heading = Heading.LEFT;
                     break;
 
             }
