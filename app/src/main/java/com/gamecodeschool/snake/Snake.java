@@ -57,7 +57,7 @@ class Snake {
 
         // Reset and rotate for down-facing head
         matrix.reset();
-        matrix.preRotate(180);
+        matrix.preRotate(90);
         mBitmapHeadDown = Bitmap.createBitmap(mBitmapHeadRight, 0, 0, mSegmentSize, mSegmentSize, matrix, true);
 
         // Body bitmap initialization (unchanged)
