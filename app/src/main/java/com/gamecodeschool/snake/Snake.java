@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.gamecodeschool.snake.R;
@@ -157,12 +158,21 @@ class Snake {
             }
         }
     }
-
+    
     void switchHeading(MotionEvent motionEvent) {
+        // Log entry for method entry with motion event details
+        Log Log = null;
+        Log.d("SnakeGame", "switchHeading called. X: " + motionEvent.getX() + ", Y: " + motionEvent.getY());
+
         // Get the x position of the touch event
         int x = (int) motionEvent.getX();
+        // Get the y position of the touch event
+        int y = (int) motionEvent.getY();
         // Determine if the touch was on the right or left side of the screen
         boolean isRightSide = x > halfWayPoint;
+
+        // Log the side of the screen touched
+        Log.d("SnakeGame", "Touch detected on " + (isRightSide ? "right" : "left") + " side of the screen.");
 
         // Get the location of the second segment to prevent 180-degree turns
         Point secondSegment = segmentLocations.size() > 1 ? segmentLocations.get(1) : null;
@@ -173,15 +183,28 @@ class Snake {
                 (heading == Heading.UP && secondSegment != null && secondSegment.y > segmentLocations.get(0).y) ||
                 (heading == Heading.DOWN && secondSegment != null && secondSegment.y < segmentLocations.get(0).y);
 
-        // If there is no second segment (only the head), or the second segment is not directly opposite the head
-        if (secondSegment == null || !opposite) {
-            if (isRightSide) {
-                // Toggle between RIGHT and LEFT
-                heading = (heading == Heading.LEFT) ? Heading.RIGHT : Heading.LEFT;
-            } else {
-                // Toggle between UP and DOWN
-                heading = (heading == Heading.UP) ? Heading.DOWN : Heading.UP;
+        // Log the current heading and position of the second segment
+        Log.d("SnakeGame", "Current heading: " + heading + ", Second segment: " + (secondSegment == null ? "null" : "x=" + secondSegment.x + ", y=" + secondSegment.y));
+
+        // Assuming isRightSide is determined by whether the touch was on the right half of the screen.
+        if (isRightSide) {
+            // Handling horizontal direction changes
+            if (heading == Heading.UP || heading == Heading.DOWN) {
+                // If the snake is currently moving vertically, it can safely switch to a horizontal direction
+                Heading newHeading = (heading == Heading.UP) ? Heading.RIGHT : Heading.LEFT;
+                Log.d("SnakeGame", "Switching heading from " + heading + " to " + newHeading);
+                heading = newHeading;
+            }
+        } else {
+            // Handling vertical direction changes
+            if (heading == Heading.LEFT || heading == Heading.RIGHT) {
+                // If the snake is currently moving horizontally, it can safely switch to a vertical direction
+                Heading newHeading = (heading == Heading.LEFT) ? Heading.UP : Heading.DOWN;
+                Log.d("SnakeGame", "Switching heading from " + heading + " to " + newHeading);
+                heading = newHeading;
             }
         }
+
+
     }
 }
