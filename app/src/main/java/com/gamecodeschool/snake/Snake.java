@@ -12,10 +12,12 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 import com.gamecodeschool.snake.R;
+import com.gamecodeschool.snake.interfaces.Drawable;
+import com.gamecodeschool.snake.interfaces.Movable;
 
 import java.util.ArrayList;
 
-class Snake {
+class Snake implements Drawable, Movable {
 
     private ArrayList<Point> segmentLocations;
     private int mSegmentSize;
@@ -75,7 +77,7 @@ class Snake {
         segmentLocations.add(new Point(w / 2, h / 2));
     }
 
-    void move() {
+    public void move() {
         if (segmentLocations.isEmpty()) {
             return; // Early return if there are no segments to move
         }
@@ -128,7 +130,7 @@ class Snake {
         return false;
     }
 
-    void draw(Canvas canvas, Paint paint) {
+    public void draw(Canvas canvas, Paint paint) {
 
         if (!segmentLocations.isEmpty()) {
             Bitmap headBitmap;
@@ -158,7 +160,7 @@ class Snake {
             }
         }
     }
-    
+
     void switchHeading(MotionEvent motionEvent) {
         // Log entry for method entry with motion event details
         Log Log = null;
