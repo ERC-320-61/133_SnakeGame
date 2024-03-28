@@ -7,17 +7,14 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import com.gamecodeschool.snake.R;
-import com.gamecodeschool.snake.interfaces.Drawable;
-import com.gamecodeschool.snake.interfaces.Movable;
+import com.gamecodeschool.snake.interfaces.GameObject;
 
 import java.util.ArrayList;
 
-class Snake implements Drawable, Movable {
+class Snake implements GameObject {
 
     private ArrayList<Point> segmentLocations;
     private int mSegmentSize;
@@ -77,6 +74,8 @@ class Snake implements Drawable, Movable {
         segmentLocations.add(new Point(w / 2, h / 2));
     }
 
+
+
     public void move() {
         if (segmentLocations.isEmpty()) {
             return; // Early return if there are no segments to move
@@ -129,6 +128,7 @@ class Snake implements Drawable, Movable {
         }
         return false;
     }
+    @Override
 
     public void draw(Canvas canvas, Paint paint) {
 
@@ -159,6 +159,11 @@ class Snake implements Drawable, Movable {
                         segmentLocations.get(i).y * mSegmentSize, paint);
             }
         }
+    }
+
+    @Override
+    public void update() {
+        move(); // Encapsulate the movement logic within the update method
     }
 
     void switchHeading(MotionEvent motionEvent) {
